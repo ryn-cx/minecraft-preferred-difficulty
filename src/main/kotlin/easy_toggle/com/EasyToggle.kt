@@ -4,9 +4,9 @@ import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
+import net.minecraft.commands.Commands
+import net.minecraft.network.chat.Component
 import net.minecraft.server.MinecraftServer
-import net.minecraft.server.command.CommandManager
-import net.minecraft.text.Text
 import net.minecraft.world.Difficulty
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -29,59 +29,60 @@ object EasyToggle : ModInitializer {
             updateDifficulty(server)
         }
         ServerPlayConnectionEvents.DISCONNECT.register { handler, server ->
-            // The player is still in playerList when DISCONNECT fires — exclude them.
+            // The player is still in the player list when DISCONNECT fires — exclude them.
             updateDifficulty(server, excludeUuid = handler.player.uuid)
         }
 
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             dispatcher.register(
-                CommandManager.literal("easydifficulty")
-                    .then(CommandManager.literal("join").executes { ctx ->
-                        val player = ctx.source.playerOrThrow
+                Commands.literal("easydifficulty")
+                    .then(Commands.literal("join").executes { ctx ->
+                        val player = ctx.source.playerOrException
                         if (easyPlayers.add(player.uuid)) {
                             saveStore()
                             updateDifficulty(ctx.source.server)
-                            ctx.source.sendFeedback(
-                                { Text.literal("You joined the easy-difficulty group. Difficulty will be EASY while you're online.") },
+                            ctx.source.sendSuccess(
+                                { Component.literal("You joined the easy-difficulty group. Difficulty will be EASY while you're online.") },
                                 false,
                             )
                         } else {
-                            ctx.source.sendFeedback(
-                                { Text.literal("You're already in the easy-difficulty group.") },
+                            ctx.source.sendSuccess(
+                                { Component.literal("You're already in the easy-difficulty group.") },
                                 false,
                             )
                         }
                         1
                     })
-                    .then(CommandManager.literal("leave").executes { ctx ->
-                        val player = ctx.source.playerOrThrow
+                    .then(Commands.literal("leave").executes { ctx ->
+                        val player = ctx.source.playerOrException
                         if (easyPlayers.remove(player.uuid)) {
                             saveStore()
                             updateDifficulty(ctx.source.server)
-                            ctx.source.sendFeedback(
-                                { Text.literal("You left the easy-difficulty group.") },
+                            ctx.source.sendSuccess(
+                                { Component.literal("You left the easy-difficulty group.") },
                                 false,
                             )
                         } else {
-                            ctx.source.sendFeedback(
-                                { Text.literal("You weren't in the easy-difficulty group.") },
+                            ctx.source.sendSuccess(
+                                { Component.literal("You weren't in the easy-difficulty group.") },
                                 false,
                             )
                         }
                         1
                     })
-                    .then(CommandManager.literal("list").executes { ctx ->
+                    .then(Commands.literal("list").executes { ctx ->
                         val server = ctx.source.server
-                        val names = easyPlayers.mapNotNull { uuid ->
-                            server.userCache?.getByUuid(uuid)?.orElse(null)?.name
-                                ?: server.playerManager.getPlayer(uuid)?.gameProfile?.name
+                        val onlineNames = easyPlayers.mapNotNull { uuid ->
+                            server.playerList.getPlayer(uuid)?.gameProfile?.name
                         }
-                        val text = if (names.isEmpty()) {
-                            "No players are in the easy-difficulty group."
-                        } else {
-                            "Easy-difficulty group (${names.size}): ${names.joinToString(", ")}"
+                        val offlineCount = easyPlayers.size - onlineNames.size
+                        val text = when {
+                            easyPlayers.isEmpty() -> "No players are in the easy-difficulty group."
+                            onlineNames.isEmpty() -> "Easy-difficulty group: ${easyPlayers.size} member(s), none online."
+                            offlineCount == 0 -> "Easy-difficulty group (${onlineNames.size}): ${onlineNames.joinToString(", ")}"
+                            else -> "Easy-difficulty group (${easyPlayers.size}): ${onlineNames.joinToString(", ")} + $offlineCount offline"
                         }
-                        ctx.source.sendFeedback({ Text.literal(text) }, false)
+                        ctx.source.sendSuccess({ Component.literal(text) }, false)
                         1
                     })
             )
@@ -89,11 +90,11 @@ object EasyToggle : ModInitializer {
     }
 
     private fun updateDifficulty(server: MinecraftServer, excludeUuid: UUID? = null) {
-        val anyEasyOnline = server.playerManager.playerList.any { player ->
+        val anyEasyOnline = server.playerList.players.any { player ->
             player.uuid != excludeUuid && easyPlayers.contains(player.uuid)
         }
         val target = if (anyEasyOnline) Difficulty.EASY else Difficulty.NORMAL
-        if (server.saveProperties.difficulty != target) {
+        if (server.worldData.difficulty != target) {
             logger.info("Setting difficulty to $target (easy players online: $anyEasyOnline)")
             server.setDifficulty(target, true)
         }

@@ -20,21 +20,8 @@
 				"value": "easy_toggle.com.EasyToggle",
 				"adapter": "kotlin"
 			}
-		],
-		"client": [
-			{
-				"value": "easy_toggle.com.client.EasyToggleClient",
-				"adapter": "kotlin"
-			}
 		]
 	},
-	"mixins": [
-		"easy-toggle.mixins.json",
-		{
-			"config": "easy-toggle.client.mixins.json",
-			"environment": "client"
-		}
-	],
 	"depends": {
 		"fabricloader": ">=0.19.2",
 		"minecraft": "~26.1.2",
