@@ -75,6 +75,30 @@ object PreferredDifficulty : ModInitializer {
                     }
                 )
             }
+            root.then(
+                Commands.literal("none").executes { ctx ->
+                    val source = ctx.source
+                    val player = source.playerOrException
+                    val hadPreference = preferences.remove(player.uuid) != null
+                    if (hadPreference) {
+                        saveStore()
+                        updateDifficulty(source.server)
+                    }
+                    val effective = source.server.worldData.difficulty
+                    source.sendSuccess(
+                        {
+                            val msg = if (hadPreference) {
+                                "Your difficulty preference has been cleared. You no longer affect server difficulty."
+                            } else {
+                                "You didn't have a difficulty preference set."
+                            }
+                            Component.literal("$msg Server difficulty: ${effective.name}.")
+                        },
+                        false,
+                    )
+                    1
+                }
+            )
             dispatcher.register(root)
         }
     }
