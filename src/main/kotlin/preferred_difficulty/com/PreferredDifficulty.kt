@@ -17,8 +17,6 @@ import java.util.concurrent.ConcurrentHashMap
 object PreferredDifficulty : ModInitializer {
     private val logger = LoggerFactory.getLogger("preferred-difficulty")
 
-    private val DEFAULT_PREFERENCE = Difficulty.EASY
-
     private val storeFile: Path =
         FabricLoader.getInstance().configDir.resolve("preferred-difficulty-preferences.txt")
 
@@ -40,15 +38,16 @@ object PreferredDifficulty : ModInitializer {
                 .executes { ctx ->
                     val source = ctx.source
                     val player = source.playerOrException
-                    val pref = preferences.getOrDefault(player.uuid, DEFAULT_PREFERENCE)
+                    val pref = preferences[player.uuid]
                     val effective = source.server.worldData.difficulty
                     source.sendSuccess(
                         {
-                            Component.literal(
-                                "Your preferred difficulty: ${pref.name} " +
-                                    "(default ${DEFAULT_PREFERENCE.name}). " +
-                                    "Server difficulty: ${effective.name}."
-                            )
+                            val prefText = if (pref != null) {
+                                "Your preferred difficulty: ${pref.name}."
+                            } else {
+                                "You haven't set a preferred difficulty (you don't affect server difficulty)."
+                            }
+                            Component.literal("$prefText Server difficulty: ${effective.name}.")
                         },
                         false,
                     )
@@ -83,9 +82,10 @@ object PreferredDifficulty : ModInitializer {
     private fun updateDifficulty(server: MinecraftServer, excludeUuid: UUID? = null) {
         val onlinePrefs = server.playerList.players
             .filter { it.uuid != excludeUuid }
-            .map { preferences.getOrDefault(it.uuid, DEFAULT_PREFERENCE) }
+            .mapNotNull { preferences[it.uuid] }
+        // No online player has expressed a preference — leave the server alone.
         // Difficulty enum is declared PEACEFUL, EASY, NORMAL, HARD — ordinal == easiness rank.
-        val target = onlinePrefs.minByOrNull { it.ordinal } ?: DEFAULT_PREFERENCE
+        val target = onlinePrefs.minByOrNull { it.ordinal } ?: return
         if (server.worldData.difficulty != target) {
             logger.info("Setting difficulty to $target (online prefs: ${onlinePrefs.map { it.name }})")
             server.setDifficulty(target, true)
@@ -98,17 +98,9 @@ object PreferredDifficulty : ModInitializer {
             val trimmed = line.trim()
             if (trimmed.isEmpty()) return@forEach
             val parts = trimmed.split(" ", limit = 2)
-            if (parts.size != 2) {
-                logger.warn("Skipping malformed line in store: $trimmed")
-                return@forEach
-            }
-            try {
-                val uuid = UUID.fromString(parts[0])
-                val diff = Difficulty.valueOf(parts[1].uppercase())
-                preferences[uuid] = diff
-            } catch (e: IllegalArgumentException) {
-                logger.warn("Skipping invalid entry in store: $trimmed (${e.message})")
-            }
+            val uuid = UUID.fromString(parts[0])
+            val diff = Difficulty.valueOf(parts[1].uppercase())
+            preferences[uuid] = diff
         }
         logger.info("Loaded ${preferences.size} difficulty preference(s)")
     }
