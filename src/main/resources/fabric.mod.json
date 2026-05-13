@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "dynamic-difficulty",
+	"version": "${version}",
+	"name": "Dynamic Difficulty",
+	"description": "Sets the world difficulty to EASY while SeraphicSage is online, and NORMAL otherwise.",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/dynamic-difficulty/icon.png",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "dynamicdifficulty.modid.DynamicDifficulty",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "dynamicdifficulty.modid.client.DynamicDifficultyClient",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"dynamic-difficulty.mixins.json",
+		{
+			"config": "dynamic-difficulty.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}
