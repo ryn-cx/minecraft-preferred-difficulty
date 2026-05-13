@@ -1,4 +1,4 @@
-# Dynamic Difficulty
+# Easy Toggle
 
 ## Setup
 

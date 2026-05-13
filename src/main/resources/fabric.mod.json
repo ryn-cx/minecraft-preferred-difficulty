@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "dynamic-difficulty",
+	"id": "easy-toggle",
 	"version": "${version}",
-	"name": "Dynamic Difficulty",
-	"description": "Sets the world difficulty to EASY while SeraphicSage is online, and NORMAL otherwise.",
+	"name": "Easy Toggle",
+	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
 		"Me!"
 	],
@@ -12,26 +12,26 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/dynamic-difficulty/icon.png",
-	"environment": "server",
+	"icon": "assets/easy-toggle/icon.png",
+	"environment": "*",
 	"entrypoints": {
 		"main": [
 			{
-				"value": "dynamicdifficulty.modid.DynamicDifficulty",
+				"value": "easy_toggle.com.EasyToggle",
 				"adapter": "kotlin"
 			}
 		],
 		"client": [
 			{
-				"value": "dynamicdifficulty.modid.client.DynamicDifficultyClient",
+				"value": "easy_toggle.com.client.EasyToggleClient",
 				"adapter": "kotlin"
 			}
 		]
 	},
 	"mixins": [
-		"dynamic-difficulty.mixins.json",
+		"easy-toggle.mixins.json",
 		{
-			"config": "dynamic-difficulty.client.mixins.json",
+			"config": "easy-toggle.client.mixins.json",
 			"environment": "client"
 		}
 	],

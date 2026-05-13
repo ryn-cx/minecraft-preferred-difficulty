@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "dynamicdifficulty.modid.client.mixin",
+	"package": "easy_toggle.com.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [
-		"ExampleClientMixin"
+	"mixins": [
+		"ExampleMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

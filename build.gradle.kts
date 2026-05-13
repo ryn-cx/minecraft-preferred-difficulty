@@ -21,7 +21,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		register("dynamic-difficulty") {
+		register("easy-toggle") {
 			sourceSet(sourceSets.main.get())
 			sourceSet(sourceSets.getByName("client"))
 		}

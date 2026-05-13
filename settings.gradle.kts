@@ -14,4 +14,4 @@ pluginManagement {
 }
 
 // Should match your modid
-rootProject.name = "dynamic-difficulty"
+rootProject.name = "easy-toggle"
