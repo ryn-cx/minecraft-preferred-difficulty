@@ -83,7 +83,9 @@ object PreferredDifficulty : ModInitializer {
                 )
             }
 
-            val minNode = Commands.literal("min")
+            dispatcher.register(root)
+
+            val minRoot = Commands.literal("minimumpreferreddifficulty")
                 .requires { it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) }
                 .executes { ctx ->
                     ctx.source.sendSuccess(
@@ -93,7 +95,7 @@ object PreferredDifficulty : ModInitializer {
                     1
                 }
             for (choice in Difficulty.values()) {
-                minNode.then(
+                minRoot.then(
                     Commands.literal(choice.name.lowercase()).executes { ctx ->
                         val source = ctx.source
                         minimumDifficulty = choice
@@ -113,9 +115,7 @@ object PreferredDifficulty : ModInitializer {
                     }
                 )
             }
-            root.then(minNode)
-
-            dispatcher.register(root)
+            dispatcher.register(minRoot)
         }
     }
 
