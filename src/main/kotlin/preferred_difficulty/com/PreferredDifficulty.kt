@@ -7,6 +7,7 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.commands.Commands
 import net.minecraft.network.chat.Component
 import net.minecraft.server.MinecraftServer
+import net.minecraft.server.permissions.Permissions
 import net.minecraft.world.Difficulty
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -19,11 +20,17 @@ object PreferredDifficulty : ModInitializer {
 
     private val storeFile: Path =
         FabricLoader.getInstance().configDir.resolve("preferred-difficulty-preferences.txt")
+    private val minimumFile: Path =
+        FabricLoader.getInstance().configDir.resolve("preferred-difficulty-minimum.txt")
 
     private val preferences: MutableMap<UUID, Difficulty> = ConcurrentHashMap()
 
+    @Volatile
+    private var minimumDifficulty: Difficulty = Difficulty.PEACEFUL
+
     override fun onInitialize() {
         loadStore()
+        loadMinimum()
 
         ServerPlayConnectionEvents.JOIN.register { _, _, server ->
             updateDifficulty(server)
@@ -75,6 +82,39 @@ object PreferredDifficulty : ModInitializer {
                     }
                 )
             }
+
+            val minNode = Commands.literal("min")
+                .requires { it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) }
+                .executes { ctx ->
+                    ctx.source.sendSuccess(
+                        { Component.literal("Global minimum difficulty: ${minimumDifficulty.name}.") },
+                        false,
+                    )
+                    1
+                }
+            for (choice in Difficulty.values()) {
+                minNode.then(
+                    Commands.literal(choice.name.lowercase()).executes { ctx ->
+                        val source = ctx.source
+                        minimumDifficulty = choice
+                        saveMinimum()
+                        updateDifficulty(source.server)
+                        val effective = source.server.worldData.difficulty
+                        source.sendSuccess(
+                            {
+                                Component.literal(
+                                    "Global minimum difficulty is now ${choice.name}. " +
+                                        "Server difficulty: ${effective.name}."
+                                )
+                            },
+                            true,
+                        )
+                        1
+                    }
+                )
+            }
+            root.then(minNode)
+
             dispatcher.register(root)
         }
     }
@@ -83,11 +123,20 @@ object PreferredDifficulty : ModInitializer {
         val onlinePrefs = server.playerList.players
             .filter { it.uuid != excludeUuid }
             .mapNotNull { preferences[it.uuid] }
-        // No online player has expressed a preference — leave the server alone.
         // Difficulty enum is declared PEACEFUL, EASY, NORMAL, HARD — ordinal == easiness rank.
-        val target = onlinePrefs.minByOrNull { it.ordinal } ?: return
+        val floor = minimumDifficulty
+        val playerTarget = onlinePrefs.minByOrNull { it.ordinal }
+        val target = when {
+            playerTarget != null ->
+                if (playerTarget.ordinal < floor.ordinal) floor else playerTarget
+            // No online player preferences and no floor above PEACEFUL — leave the server alone.
+            floor.ordinal > server.worldData.difficulty.ordinal -> floor
+            else -> return
+        }
         if (server.worldData.difficulty != target) {
-            logger.info("Setting difficulty to $target (online prefs: ${onlinePrefs.map { it.name }})")
+            logger.info(
+                "Setting difficulty to $target (online prefs: ${onlinePrefs.map { it.name }}, min: ${floor.name})"
+            )
             server.setDifficulty(target, true)
         }
     }
@@ -108,5 +157,18 @@ object PreferredDifficulty : ModInitializer {
     private fun saveStore() {
         Files.createDirectories(storeFile.parent)
         Files.write(storeFile, preferences.map { (uuid, diff) -> "$uuid ${diff.name}" })
+    }
+
+    private fun loadMinimum() {
+        if (!Files.exists(minimumFile)) return
+        val line = Files.readAllLines(minimumFile).firstOrNull()?.trim().orEmpty()
+        if (line.isEmpty()) return
+        minimumDifficulty = Difficulty.valueOf(line.uppercase())
+        logger.info("Loaded global minimum difficulty: ${minimumDifficulty.name}")
+    }
+
+    private fun saveMinimum() {
+        Files.createDirectories(minimumFile.parent)
+        Files.write(minimumFile, listOf(minimumDifficulty.name))
     }
 }
