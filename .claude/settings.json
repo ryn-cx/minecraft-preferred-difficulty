@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -p /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar net/minecraft/server/permissions/Permission.class)",
+      "Bash(javap /tmp/p.class)",
+      "Bash(unzip -l /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar)",
+      "Bash(unzip -p /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar 'net/minecraft/server/permissions/Permission$HasCommandLevel.class')",
+      "Bash(javap /tmp/hcl.class)",
+      "Bash(unzip -p /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar net/minecraft/server/permissions/PermissionLevel.class)",
+      "Bash(javap /tmp/pl.class)",
+      "Bash(unzip -p /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar net/minecraft/server/permissions/Permissions.class)",
+      "Bash(javap /tmp/perms.class)",
+      "Bash(unzip -p /c/Users/YBR/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-common-deobf/26.1.2/minecraft-common-deobf-26.1.2.jar net/minecraft/commands/CommandSourceStack.class)",
+      "Bash(javap -)",
+      "PowerShell(gh run list --limit 5 2>&1)",
+      "Bash(./gradlew clean *)"
+    ]
+  }
+}
